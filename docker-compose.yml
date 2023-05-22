@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "file_store"
+    ports:
+      - '5432:5432'
+    expose:
+      - "5432"
+    volumes:
+      - ./db/scheme.sql:/docker-entrypoint-initdb.d/init.sql
+volumes:
+  db:
+    driver: local

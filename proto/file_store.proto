@@ -1,0 +1,29 @@
+// pkg/proto/upload.proto
+ 
+syntax = "proto3";
+ 
+package proto;
+ 
+option go_package = ".;storepb";
+ 
+service UploadService {
+    rpc Upload(stream UploadRequest) returns (UploadResponse) {}
+    rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
+}
+ 
+message UploadRequest {
+    string name = 1;
+    bytes chunk = 2;
+}
+ 
+message UploadResponse {
+    string uuid = 1;
+}
+
+message DownloadRequest {
+    string uuid = 1;
+}
+ 
+message DownloadResponse {
+    bytes chunk = 1;
+}
