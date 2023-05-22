@@ -2,7 +2,9 @@ package upload
 
 import (
 	"context"
+	"errors"
 	"io"
+	"path/filepath"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,7 +35,23 @@ func (s Server) Upload(stream uploadpb.UploadService_UploadServer) error {
 	uuid := uuid.New()
 	file := storage.NewFile(uuid.String())
 
-	err := s.repo.Create(stream.Context(), file)
+	// В первом партишине получаем название файла
+	req, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+
+	// Не стал добавлять строгую проверку на mime type
+	// В продакшене бы добавил.
+	switch filepath.Ext(req.GetName()) {
+	case "jpg", "png", "jpeg", "gif":
+	default:
+		return errors.New("Invalid file")
+	}
+
+	file.Name = filepath.Base(req.GetName())
+
+	err = s.repo.Create(stream.Context(), file)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/file_store/internal/storage"
@@ -37,6 +38,11 @@ func (c Client) Upload(ctx context.Context, file string) (string, error) {
 		return "", err
 	}
 
+	if err := stream.Send(&uploadpb.UploadRequest{
+		Data: &uploadpb.UploadRequest_Name{Name: filepath.Base(fil.Name())}}); err != nil {
+		return "", err
+	}
+
 	// Maximum 1mb size per stream.
 	buf := make([]byte, 1024*1024)
 
@@ -49,7 +55,7 @@ func (c Client) Upload(ctx context.Context, file string) (string, error) {
 			return "", err
 		}
 
-		if err := stream.Send(&uploadpb.UploadRequest{Chunk: buf[:num]}); err != nil {
+		if err := stream.Send(&uploadpb.UploadRequest{Data: &uploadpb.UploadRequest_Chunk{Chunk: buf[:num]}}); err != nil {
 			return "", err
 		}
 	}

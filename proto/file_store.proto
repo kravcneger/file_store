@@ -12,8 +12,10 @@ service UploadService {
 }
  
 message UploadRequest {
-    string name = 1;
-    bytes chunk = 2;
+    oneof data {
+        string name = 1;
+        bytes chunk = 2;
+    }
 }
  
 message UploadResponse {
