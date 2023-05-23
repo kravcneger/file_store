@@ -26,7 +26,7 @@ func NewClient(conn grpc.ClientConnInterface) Client {
 }
 
 func (c Client) Upload(ctx context.Context, file string) (string, error) {
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Second))
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(60*time.Second))
 	defer cancel()
 
 	stream, err := c.client.Upload(ctx)
@@ -70,7 +70,7 @@ func (c Client) Upload(ctx context.Context, file string) (string, error) {
 }
 
 func (c Client) Download(ctx context.Context, uuid string, path string) error {
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Second))
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(60*time.Second))
 	defer cancel()
 
 	stream, err := c.client.Download(ctx, &storepb.DownloadRequest{Uuid: uuid})

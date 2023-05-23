@@ -14,25 +14,38 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	UploadWorkerPool  = 10
+	GetListWorkerPool = 100
+)
+
 type FilesRepo interface {
 	Create(context.Context, *storage.File) (err error)
 	GetList(context.Context) ([]storage.File, error)
 }
 
 type Server struct {
-	storage storage.Manager
-	repo    FilesRepo
+	uploadWorkerGroup chan struct{}
+	readWorkerGroup   chan struct{}
+	storage           storage.Manager
+	repo              FilesRepo
 	storepb.UnimplementedUploadServiceServer
 }
 
-func NewServer(storage storage.Manager, repo FilesRepo) Server {
-	return Server{
+func NewServer(storage storage.Manager, repo FilesRepo) *Server {
+	s := Server{
 		storage: storage,
 		repo:    repo,
 	}
+	s.uploadWorkerGroup = make(chan struct{}, UploadWorkerPool)
+	s.readWorkerGroup = make(chan struct{}, GetListWorkerPool)
+	return &s
 }
 
-func (s Server) Upload(stream storepb.UploadService_UploadServer) error {
+func (s *Server) Upload(stream storepb.UploadService_UploadServer) error {
+	s.uploadWorkerGroup <- struct{}{}
+	defer func() { <-s.uploadWorkerGroup }()
+
 	uuid := uuid.New()
 	file := storage.NewFile(uuid.String())
 
@@ -41,7 +54,8 @@ func (s Server) Upload(stream storepb.UploadService_UploadServer) error {
 	if err != nil {
 		return err
 	}
-
+	// For debug
+	//time.Sleep(30 * time.Second)
 	// Не стал добавлять строгую проверку на mime type
 	// В продакшене бы добавил.
 	switch filepath.Ext(req.GetName()) {
@@ -77,7 +91,10 @@ func (s Server) Upload(stream storepb.UploadService_UploadServer) error {
 	}
 }
 
-func (s Server) Download(req *storepb.DownloadRequest, stream storepb.UploadService_DownloadServer) error {
+func (s *Server) Download(req *storepb.DownloadRequest, stream storepb.UploadService_DownloadServer) error {
+	s.readWorkerGroup <- struct{}{}
+	defer func() { <-s.readWorkerGroup }()
+
 	file, err := s.storage.Open(req.GetUuid())
 	defer file.Close()
 	if err != nil {
@@ -105,7 +122,10 @@ func (s Server) Download(req *storepb.DownloadRequest, stream storepb.UploadServ
 
 }
 
-func (s Server) GetList(req *storepb.GetListRequest, stream storepb.UploadService_GetListServer) error {
+func (s *Server) GetList(req *storepb.GetListRequest, stream storepb.UploadService_GetListServer) error {
+	s.uploadWorkerGroup <- struct{}{}
+	defer func() { <-s.uploadWorkerGroup }()
+
 	files, err := s.repo.GetList(stream.Context())
 	if err != nil {
 		return err
