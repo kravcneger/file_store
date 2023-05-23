@@ -26,7 +26,7 @@ func main() {
 	// Start uploading the file. Error if failed, otherwise echo download URL.
 	client := upload.NewClient(conn)
 
-	if len(flag.Args()) < 2 {
+	if len(flag.Args()) < 1 {
 		log.Fatalf("fatal: you should specify the command")
 	}
 
@@ -38,6 +38,8 @@ func main() {
 		log.Println(er)
 	case "download":
 		err = client.Download(context.Background(), flag.Arg(1), flag.Arg(2))
+	case "list":
+		err = client.GetList(context.Background())
 	}
 	log.Println(err)
 }

@@ -9,6 +9,7 @@ option go_package = ".;storepb";
 service UploadService {
     rpc Upload(stream UploadRequest) returns (UploadResponse) {}
     rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
+    rpc GetList(GetListRequest) returns (stream GetListResponse) {}
 }
  
 message UploadRequest {
@@ -28,4 +29,13 @@ message DownloadRequest {
  
 message DownloadResponse {
     bytes chunk = 1;
+}
+
+message GetListRequest {    
+}
+ 
+message GetListResponse {
+    string name  = 1;
+    string created_at  = 2;
+    string updated_at  = 3;
 }

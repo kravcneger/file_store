@@ -10,18 +10,19 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/file_store/internal/storage"
-	uploadpb "github.com/file_store/proto"
+	storepb "github.com/file_store/proto"
 	"github.com/google/uuid"
 )
 
 type FilesRepo interface {
 	Create(context.Context, *storage.File) (err error)
+	GetList(context.Context) ([]storage.File, error)
 }
 
 type Server struct {
 	storage storage.Manager
 	repo    FilesRepo
-	uploadpb.UnimplementedUploadServiceServer
+	storepb.UnimplementedUploadServiceServer
 }
 
 func NewServer(storage storage.Manager, repo FilesRepo) Server {
@@ -31,7 +32,7 @@ func NewServer(storage storage.Manager, repo FilesRepo) Server {
 	}
 }
 
-func (s Server) Upload(stream uploadpb.UploadService_UploadServer) error {
+func (s Server) Upload(stream storepb.UploadService_UploadServer) error {
 	uuid := uuid.New()
 	file := storage.NewFile(uuid.String())
 
@@ -44,7 +45,7 @@ func (s Server) Upload(stream uploadpb.UploadService_UploadServer) error {
 	// Не стал добавлять строгую проверку на mime type
 	// В продакшене бы добавил.
 	switch filepath.Ext(req.GetName()) {
-	case "jpg", "png", "jpeg", "gif":
+	case ".jpg", ".png", ".jpeg", ".gif":
 	default:
 		return errors.New("Invalid file")
 	}
@@ -63,7 +64,7 @@ func (s Server) Upload(stream uploadpb.UploadService_UploadServer) error {
 				return status.Error(codes.Internal, err.Error())
 			}
 
-			return stream.SendAndClose(&uploadpb.UploadResponse{Uuid: uuid.String()})
+			return stream.SendAndClose(&storepb.UploadResponse{Uuid: uuid.String()})
 		}
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
@@ -76,7 +77,7 @@ func (s Server) Upload(stream uploadpb.UploadService_UploadServer) error {
 	}
 }
 
-func (s Server) Download(req *uploadpb.DownloadRequest, stream uploadpb.UploadService_DownloadServer) error {
+func (s Server) Download(req *storepb.DownloadRequest, stream storepb.UploadService_DownloadServer) error {
 	file, err := s.storage.Open(req.GetUuid())
 	defer file.Close()
 	if err != nil {
@@ -95,11 +96,31 @@ func (s Server) Download(req *uploadpb.DownloadRequest, stream uploadpb.UploadSe
 			return err
 		}
 
-		if err := stream.Send(&uploadpb.DownloadResponse{Chunk: buf[:num]}); err != nil {
+		if err := stream.Send(&storepb.DownloadResponse{Chunk: buf[:num]}); err != nil {
 			return err
 		}
 	}
 
 	return nil
 
+}
+
+func (s Server) GetList(req *storepb.GetListRequest, stream storepb.UploadService_GetListServer) error {
+	files, err := s.repo.GetList(stream.Context())
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		err := stream.Send(&storepb.GetListResponse{
+			Name:      file.Name,
+			CreatedAt: file.CreatedAt.String(),
+			UpdatedAt: file.UpdatedAt.String(),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

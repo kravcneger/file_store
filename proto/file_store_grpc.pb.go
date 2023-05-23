@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UploadServiceClient interface {
 	Upload(ctx context.Context, opts ...grpc.CallOption) (UploadService_UploadClient, error)
 	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (UploadService_DownloadClient, error)
+	GetList(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (UploadService_GetListClient, error)
 }
 
 type uploadServiceClient struct {
@@ -100,12 +101,45 @@ func (x *uploadServiceDownloadClient) Recv() (*DownloadResponse, error) {
 	return m, nil
 }
 
+func (c *uploadServiceClient) GetList(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (UploadService_GetListClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UploadService_ServiceDesc.Streams[2], "/proto.UploadService/GetList", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &uploadServiceGetListClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type UploadService_GetListClient interface {
+	Recv() (*GetListResponse, error)
+	grpc.ClientStream
+}
+
+type uploadServiceGetListClient struct {
+	grpc.ClientStream
+}
+
+func (x *uploadServiceGetListClient) Recv() (*GetListResponse, error) {
+	m := new(GetListResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // UploadServiceServer is the server API for UploadService service.
 // All implementations must embed UnimplementedUploadServiceServer
 // for forward compatibility
 type UploadServiceServer interface {
 	Upload(UploadService_UploadServer) error
 	Download(*DownloadRequest, UploadService_DownloadServer) error
+	GetList(*GetListRequest, UploadService_GetListServer) error
 	mustEmbedUnimplementedUploadServiceServer()
 }
 
@@ -118,6 +152,9 @@ func (UnimplementedUploadServiceServer) Upload(UploadService_UploadServer) error
 }
 func (UnimplementedUploadServiceServer) Download(*DownloadRequest, UploadService_DownloadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Download not implemented")
+}
+func (UnimplementedUploadServiceServer) GetList(*GetListRequest, UploadService_GetListServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetList not implemented")
 }
 func (UnimplementedUploadServiceServer) mustEmbedUnimplementedUploadServiceServer() {}
 
@@ -179,6 +216,27 @@ func (x *uploadServiceDownloadServer) Send(m *DownloadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _UploadService_GetList_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetListRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(UploadServiceServer).GetList(m, &uploadServiceGetListServer{stream})
+}
+
+type UploadService_GetListServer interface {
+	Send(*GetListResponse) error
+	grpc.ServerStream
+}
+
+type uploadServiceGetListServer struct {
+	grpc.ServerStream
+}
+
+func (x *uploadServiceGetListServer) Send(m *GetListResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // UploadService_ServiceDesc is the grpc.ServiceDesc for UploadService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -195,6 +253,11 @@ var UploadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Download",
 			Handler:       _UploadService_Download_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetList",
+			Handler:       _UploadService_GetList_Handler,
 			ServerStreams: true,
 		},
 	},

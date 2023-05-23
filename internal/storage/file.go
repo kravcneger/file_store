@@ -2,12 +2,15 @@ package storage
 
 import (
 	"bytes"
+	"time"
 )
 
 type File struct {
-	UUID   string
-	Name   string
-	buffer *bytes.Buffer
+	UUID      string    `pg:"uuid"`
+	Name      string    `pg:"name"`
+	CreatedAt time.Time `pg:"created_at"`
+	UpdatedAt time.Time `pg:"updated_at"`
+	buffer    *bytes.Buffer
 }
 
 func NewFile(uuid string) *File {
