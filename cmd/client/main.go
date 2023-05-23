@@ -31,15 +31,18 @@ func main() {
 	}
 
 	command := flag.Arg(0)
+	var res string
 	switch command {
 	case "upload":
-		res, er := client.Upload(context.Background(), flag.Arg(1))
+		res, err = client.Upload(context.Background(), flag.Arg(1))
 		log.Println(res)
-		log.Println(er)
 	case "download":
 		err = client.Download(context.Background(), flag.Arg(1), flag.Arg(2))
 	case "list":
 		err = client.GetList(context.Background())
 	}
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+	}
+
 }
