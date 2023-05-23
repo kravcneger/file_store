@@ -92,8 +92,8 @@ func (s *Server) Upload(stream storepb.UploadService_UploadServer) error {
 }
 
 func (s *Server) Download(req *storepb.DownloadRequest, stream storepb.UploadService_DownloadServer) error {
-	s.readWorkerGroup <- struct{}{}
-	defer func() { <-s.readWorkerGroup }()
+	s.uploadWorkerGroup <- struct{}{}
+	defer func() { <-s.uploadWorkerGroup }()
 
 	file, err := s.storage.Open(req.GetUuid())
 	defer file.Close()
