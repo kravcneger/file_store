@@ -1,15 +1,15 @@
-  Запуск инфарструктуры
-  make up
+    Запуск инфарструктуры
+    make up
   
-  запуск сервера:
-  go run cmd/server/main.go
+    запуск сервера:
+    go run cmd/server/main.go
   
-  отправка файла:
-  go run cmd/client/main.go ~/desktop/file.png
-  возвращает uuid
+    отправка файла:
+    go run cmd/client/main.go ~/desktop/file.png
+    возвращает uuid
   
-  получение файла
-  go run cmd/client/main.go uuid  ~/folder
+    получение файла
+    go run cmd/client/main.go uuid  ~/folder
   
-  получить список(работает без пагинации, отдаёт все)
-  go run cmd/client/main.go list
+    получить список(работает без пагинации, отдаёт все)
+    go run cmd/client/main.go list
